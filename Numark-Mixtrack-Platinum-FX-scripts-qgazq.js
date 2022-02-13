@@ -2,13 +2,13 @@ var MixtrackPlatinumFX = {};
 
 // FX toggles
 MixtrackPlatinumFX.toggleFXControlEnable = true;
-MixtrackPlatinumFX.toggleFXControlSuper = true;
+MixtrackPlatinumFX.toggleFXControlSuper = false;
 
 // pitch ranges
 // add/remove/modify steps to your liking
 // default step must be set in Mixxx settings
 // setting is stored per deck in pitchRange.currentRangeIdx
-MixtrackPlatinumFX.pitchRanges = [0.08, 0.16, 1];
+MixtrackPlatinumFX.pitchRanges = [0.08, 0.16, 0.5];
 
 MixtrackPlatinumFX.HIGH_LIGHT = 0x09;
 MixtrackPlatinumFX.LOW_LIGHT = 0x01;
@@ -91,8 +91,11 @@ MixtrackPlatinumFX.init = function(id, debug) {
     var i;
     for (i = 0; i < 4; i++) {
         MixtrackPlatinumFX.deck[i] = new MixtrackPlatinumFX.Deck(i + 1);
-        MixtrackPlatinumFX.effect[i] = new MixtrackPlatinumFX.EffectUnit(i + 1 % 2);
+        MixtrackPlatinumFX.updateRateRange(i, "[Channel" + (i+1) + "]", MixtrackPlatinumFX.pitchRanges[0]);
     }
+    for (i = 0; i < 2; i++) {
+        MixtrackPlatinumFX.effect[i] = new MixtrackPlatinumFX.EffectUnit((i % 2)+1);
+	}
 
     MixtrackPlatinumFX.browse = new MixtrackPlatinumFX.Browse();
     MixtrackPlatinumFX.gains = new MixtrackPlatinumFX.Gains();
@@ -104,6 +107,11 @@ MixtrackPlatinumFX.init = function(id, debug) {
     engine.makeConnection("[Channel2]", "VuMeter", MixtrackPlatinumFX.vuCallback);
     engine.makeConnection("[Channel3]", "VuMeter", MixtrackPlatinumFX.vuCallback);
     engine.makeConnection("[Channel4]", "VuMeter", MixtrackPlatinumFX.vuCallback);
+
+    engine.makeConnection("[Channel1]", 'rate', MixtrackPlatinumFX.rateCallback).trigger();
+    engine.makeConnection("[Channel2]", 'rate', MixtrackPlatinumFX.rateCallback).trigger();
+    engine.makeConnection("[Channel3]", 'rate', MixtrackPlatinumFX.rateCallback).trigger();
+    engine.makeConnection("[Channel4]", 'rate', MixtrackPlatinumFX.rateCallback).trigger();
 
     // trigger is needed to initialize lights to 0x01
     MixtrackPlatinumFX.deck.forEachComponent(function(component) {
@@ -144,6 +152,19 @@ MixtrackPlatinumFX.unshift = function() {
     MixtrackPlatinumFX.effect.unshift();
 };
 
+MixtrackPlatinumFX.allEffectOff = function() {
+    midi.sendShortMsg(0x98, 0x00, MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x98, 0x01, MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x98, 0x02, MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x99, 0x03, MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x99, 0x04, MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x99, 0x05, MixtrackPlatinumFX.LOW_LIGHT);
+	MixtrackPlatinumFX.effect[0].effects=[false, false, false];
+	MixtrackPlatinumFX.effect[1].effects=[false, false, false];
+	MixtrackPlatinumFX.effect[0].updateEffects();
+	MixtrackPlatinumFX.effect[1].updateEffects();
+};
+
 // TODO in 2.3 it is not possible to "properly" map the FX selection buttons.
 // this should be done with load_preset and QuickEffects instead (when effect
 // chain preset saving/loading is available in Mixxx)
@@ -154,7 +175,7 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     this.updateEffects = function() {
         if (MixtrackPlatinumFX.toggleFXControlEnable) {
             for (var i = 1; i <= this.effects.length; i++) {            
-                engine.setValue("[EffectRack1_EffectUnit" + deckNumber + "_Effect"+i+"]", "enabled", this.effects[i-1] && this.isSwitchHolded); 
+                engine.setValue("[EffectRack1_EffectUnit" + deckNumber + "_Effect"+i+"]", "enabled", this.effects[i-1]); 
             }
         }
     }
@@ -169,6 +190,14 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
         if (MixtrackPlatinumFX.toggleFXControlSuper) {        
             engine.setValue(group, "super1", Math.min(value, 1.0));
         }
+		
+		var fxDeck=deckNumber;
+		if (!MixtrackPlatinumFX.deck[deckNumber-1].active)
+		{
+			fxDeck+=2;
+		}
+		engine.setValue("[EffectRack1_EffectUnit1]", "group_[Channel" + fxDeck + "]_enable", (value != 0));
+		engine.setValue("[EffectRack1_EffectUnit2]", "group_[Channel" + fxDeck + "]_enable", (value != 0));
         
         this.updateEffects();
     }
@@ -180,6 +209,10 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     
     this.effect1 = function(channel, control, value, status, group) {
         if (value == 0x7F) {
+			if (MixtrackPlatinumFX.shifted)
+			{
+				MixtrackPlatinumFX.allEffectOff();
+			}
             this.effects[0] = !this.effects[0];
             midi.sendShortMsg(status, control, this.effects[0] ? MixtrackPlatinumFX.HIGH_LIGHT : MixtrackPlatinumFX.LOW_LIGHT);
         }
@@ -190,6 +223,10 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     
     this.effect2 = function(channel, control, value, status, group) {
         if (value == 0x7F) {
+			if (MixtrackPlatinumFX.shifted)
+			{
+				MixtrackPlatinumFX.allEffectOff();
+			}
             this.effects[1] = !this.effects[1];
             midi.sendShortMsg(status, control, this.effects[1] ? MixtrackPlatinumFX.HIGH_LIGHT : MixtrackPlatinumFX.LOW_LIGHT);
         }
@@ -199,6 +236,10 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     
     this.effect3 = function(channel, control, value, status, group) {
         if (value == 0x7F) {
+			if (MixtrackPlatinumFX.shifted)
+			{
+				MixtrackPlatinumFX.allEffectOff();
+			}
             this.effects[2] = !this.effects[2];
             midi.sendShortMsg(status, control, this.effects[2] ? MixtrackPlatinumFX.HIGH_LIGHT : MixtrackPlatinumFX.LOW_LIGHT);
         }
@@ -206,14 +247,44 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
         this.updateEffects();
     }
     
-
+	// copy paste since I'm not sure if we want to handle it like this or not
     this.effectParam = new components.Encoder({
         group: "[EffectRack1_EffectUnit" + deckNumber + "_Effect1]",
         shift: function() {
-            this.inKey = "parameter2";
+            this.inKey = "parameter1";
         },
         unshift: function() {
+            this.inKey = "meta";
+        },
+        input: function(channel, control, value) {
+            this.inSetParameter(this.inGetParameter() + this.inValueScale(value));
+        },
+        inValueScale: function(value) {
+            return (value < 0x40) ? 0.05 : -0.05;
+        }
+    });
+    this.effectParam2 = new components.Encoder({
+        group: "[EffectRack1_EffectUnit" + deckNumber + "_Effect2]",
+        shift: function() {
             this.inKey = "parameter1";
+        },
+        unshift: function() {
+            this.inKey = "meta";
+        },
+        input: function(channel, control, value) {
+            this.inSetParameter(this.inGetParameter() + this.inValueScale(value));
+        },
+        inValueScale: function(value) {
+            return (value < 0x40) ? 0.05 : -0.05;
+        }
+    });
+    this.effectParam3 = new components.Encoder({
+        group: "[EffectRack1_EffectUnit" + deckNumber + "_Effect3]",
+        shift: function() {
+            this.inKey = "parameter1";
+        },
+        unshift: function() {
+            this.inKey = "meta";
         },
         input: function(channel, control, value) {
             this.inSetParameter(this.inGetParameter() + this.inValueScale(value));
@@ -493,7 +564,8 @@ MixtrackPlatinumFX.Deck = function(number) {
                     return;
                 }
                 this.currentRangeIdx = (this.currentRangeIdx + 1) % MixtrackPlatinumFX.pitchRanges.length;
-                engine.setValue(this.group, "rateRange", MixtrackPlatinumFX.pitchRanges[this.currentRangeIdx]);
+                //engine.setValue(this.group, "rateRange", MixtrackPlatinumFX.pitchRanges[this.currentRangeIdx]);
+				MixtrackPlatinumFX.updateRateRange(channel, this.group, MixtrackPlatinumFX.pitchRanges[this.currentRangeIdx]);
             };
         },
         unshift: function() {
@@ -903,7 +975,7 @@ MixtrackPlatinumFX.timeMs = function(deck, position, duration) {
     return Math.round(duration * position * 1000);
 };
 
-MixtrackPlatinumFX.encodeNumToArray = function(number) {
+MixtrackPlatinumFX.encodeNumToArray = function(number, drop, unsigned) {
     var number_array = [
         (number >> 28) & 0x0F,
         (number >> 24) & 0x0F,
@@ -915,8 +987,12 @@ MixtrackPlatinumFX.encodeNumToArray = function(number) {
         number & 0x0F,
     ];
 
+    if (drop !== undefined) {
+        number_array.splice(0, drop);
+    }
+
     if (number < 0) number_array[0] = 0x07;
-    else number_array[0] = 0x08;
+    else if (!unsigned) number_array[0] = 0x08;
 
     return number_array;
 };
@@ -962,12 +1038,47 @@ MixtrackPlatinumFX.shiftToggle = function (channel, control, value, status, grou
 };
 
 MixtrackPlatinumFX.deckSwitch = function (channel, control, value, status, group) {
-    var deck = channel;
-    MixtrackPlatinumFX.deck[deck].setActive(value == 0x7F); 
+	// Ignore the release the deck switch callback
+	// called both when actually releasing the button and for the alt deck when switching
+	if (value)
+	{
+		var deck = channel;
+		MixtrackPlatinumFX.deck[deck].setActive(value == 0x7F); 
+		// turn "off" the other deck
+		// this can't reliably be done with the release and it also trigger for this deck when the button is released
+		var other = 4-deck;
+		if (deck==0 || deck==2)
+			other = 2-deck;
+		MixtrackPlatinumFX.deck[other].setActive(false); 
+		// also zero vu meters
+		if (value == 0x7F) {
+			midi.sendShortMsg(0xBF, 0x44, 0);
+			midi.sendShortMsg(0xBF, 0x45, 0);
+		}
+	}
+};
 
-    // also zero vu meters
-    if (value == 0x7F) {
-        midi.sendShortMsg(0xBF, 0x44, 0);
-        midi.sendShortMsg(0xBF, 0x45, 0);
-    }
+var sendSysex = function(buffer) {
+    midi.sendSysexMsg(buffer, buffer.length);
+}
+
+MixtrackPlatinumFX.sendScreenRateMidi = function(deck, rate) {
+    rateArray = MixtrackPlatinumFX.encodeNumToArray(rate, 2);
+
+    var bytePrefix = [0xF0, 0x00, 0x20, 0x7F, deck, 0x02];
+    var bytePostfix = [0xF7];
+    var byteArray = bytePrefix.concat(rateArray, bytePostfix);
+    sendSysex(byteArray);
+};
+
+MixtrackPlatinumFX.rateCallback = function(rate, group, control)  {
+    var channel = script.deckFromGroup(group) - 1;
+    var rateEffective = engine.getValue(group, "rateRange") * -rate;
+    MixtrackPlatinumFX.sendScreenRateMidi(channel+1, Math.round(rateEffective*10000));
+};
+
+MixtrackPlatinumFX.updateRateRange = function(channel, group, range) {
+    //engine.setParameter(group, "rateRange", (range-0.01)*0.25);
+    engine.setValue(group, "rateRange", range);
+    midi.sendShortMsg(0x90+channel, 0x0e, range*100);
 };

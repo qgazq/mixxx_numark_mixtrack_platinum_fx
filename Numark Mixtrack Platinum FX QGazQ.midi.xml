@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <MixxxControllerPreset schemaVersion="1" mixxxVersion="2.3.0+">
   <info>
-    <name>Numark Mixtrack Platinum FX</name>
-    <author>Octopussy based on mapping from h67ma, bad1dea5, photoenix, Matthew Nicholson, Ending</author>
-    <description>Mapping for the Numark Mixtrack Platinum FX. 6 effects are divided into 2 Effect racks. The two FX switches controls enable switch of all selected effect and a super knob. This behavior can be changed inside the js file.</description>
+    <name>Numark Mixtrack Platinum FX QGazQ</name>
+    <author>QGazQ tweaks of Octopussy based on mapping from h67ma, bad1dea5, photoenix, Matthew Nicholson, Ending, Kaj Bostrom</author>
+    <description>Mapping for the Numark Mixtrack Platinum FX.</description>
     <forums>https://mixxx.discourse.group/t/numark-mixtrack-platinum-fx-mapping/19985</forums>
   </info>
   <controller id="MixTrack">
     <scriptfiles>
       <file functionprefix="" filename="lodash.mixxx.js" />
       <file functionprefix="" filename="midi-components-0.0.js" />
-      <file functionprefix="MixtrackPlatinumFX" filename="Numark-Mixtrack-Platinum-FX-scripts.js" />
+      <file functionprefix="MixtrackPlatinumFX" filename="Numark-Mixtrack-Platinum-FX-scripts-qgazq.js" />
     </scriptfiles>
     <controls>
       <!-- Main gain -->
@@ -3224,6 +3224,42 @@
           <script-binding />
         </options>
       </control>
+      <control>
+        <group>[EffectRack1_EffectUnit1]</group>
+        <key>MixtrackPlatinumFX.effect[0].effectParam2.input</key>
+        <status>0xB8</status>
+        <midino>0x05</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[EffectRack1_EffectUnit2]</group>
+        <key>MixtrackPlatinumFX.effect[1].effectParam2.input</key>
+        <status>0xB8</status>
+        <midino>0x05</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[EffectRack1_EffectUnit1]</group>
+        <key>MixtrackPlatinumFX.effect[0].effectParam3.input</key>
+        <status>0xB8</status>
+        <midino>0x05</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[EffectRack1_EffectUnit2]</group>
+        <key>MixtrackPlatinumFX.effect[1].effectParam3.input</key>
+        <status>0xB8</status>
+        <midino>0x05</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
       <!-- Tap button (press) -->
       <control>
         <group>[Channel1]</group>
@@ -3420,6 +3456,24 @@
           <script-binding />
         </options>
       </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pflButton.input</key>
+        <status>0x92</status>
+        <midino>0x1B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pflButton.input</key>
+        <status>0x93</status>
+        <midino>0x1B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
       <!-- PFL buttons (release) -->
       <control>
         <group>[Channel1]</group>
@@ -3434,6 +3488,24 @@
         <group>[Channel2]</group>
         <key>MixtrackPlatinumFX.deck[1].pflButton.input</key>
         <status>0x81</status>
+        <midino>0x1B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pflButton.input</key>
+        <status>0x82</status>
+        <midino>0x1B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pflButton.input</key>
+        <status>0x83</status>
         <midino>0x1B</midino>
         <options>
           <script-binding />
@@ -3478,6 +3550,24 @@
           <script-binding />
         </options>
       </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendDown.input</key>
+        <status>0x92</status>
+        <midino>0x0C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendDown.input</key>
+        <status>0x93</status>
+        <midino>0x0C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
       <!-- Pitch bend down buttons (release) -->
       <control>
         <group>[Channel1]</group>
@@ -3492,6 +3582,24 @@
         <group>[Channel2]</group>
         <key>MixtrackPlatinumFX.deck[1].pitchBendDown.input</key>
         <status>0x81</status>
+        <midino>0x0C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendDown.input</key>
+        <status>0x82</status>
+        <midino>0x0C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendDown.input</key>
+        <status>0x83</status>
         <midino>0x0C</midino>
         <options>
           <script-binding />
@@ -3516,6 +3624,24 @@
           <script-binding />
         </options>
       </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendDown.input</key>
+        <status>0x92</status>
+        <midino>0x2C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendDown.input</key>
+        <status>0x93</status>
+        <midino>0x2C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
       <!-- Pitch bend down buttons (shift release) -->
       <control>
         <group>[Channel1]</group>
@@ -3530,6 +3656,24 @@
         <group>[Channel2]</group>
         <key>MixtrackPlatinumFX.deck[1].pitchBendDown.input</key>
         <status>0x81</status>
+        <midino>0x2C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendDown.input</key>
+        <status>0x82</status>
+        <midino>0x2C</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendDown.input</key>
+        <status>0x83</status>
         <midino>0x2C</midino>
         <options>
           <script-binding />
@@ -3554,6 +3698,24 @@
           <script-binding />
         </options>
       </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendUp.input</key>
+        <status>0x92</status>
+        <midino>0x0B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendUp.input</key>
+        <status>0x93</status>
+        <midino>0x0B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
       <!-- Pitch bend up buttons (release) -->
       <control>
         <group>[Channel1]</group>
@@ -3568,6 +3730,24 @@
         <group>[Channel2]</group>
         <key>MixtrackPlatinumFX.deck[1].pitchBendUp.input</key>
         <status>0x81</status>
+        <midino>0x0B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendUp.input</key>
+        <status>0x82</status>
+        <midino>0x0B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendUp.input</key>
+        <status>0x83</status>
         <midino>0x0B</midino>
         <options>
           <script-binding />
@@ -3592,6 +3772,24 @@
           <script-binding />
         </options>
       </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendUp.input</key>
+        <status>0x92</status>
+        <midino>0x2B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendUp.input</key>
+        <status>0x93</status>
+        <midino>0x2B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
       <!-- Pitch bend up buttons (shift release) -->
       <control>
         <group>[Channel1]</group>
@@ -3606,6 +3804,24 @@
         <group>[Channel2]</group>
         <key>MixtrackPlatinumFX.deck[1].pitchBendUp.input</key>
         <status>0x81</status>
+        <midino>0x2B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel3]</group>
+        <key>MixtrackPlatinumFX.deck[2].pitchBendUp.input</key>
+        <status>0x82</status>
+        <midino>0x2B</midino>
+        <options>
+          <script-binding />
+        </options>
+      </control>
+      <control>
+        <group>[Channel4]</group>
+        <key>MixtrackPlatinumFX.deck[3].pitchBendUp.input</key>
+        <status>0x83</status>
         <midino>0x2B</midino>
         <options>
           <script-binding />
@@ -3692,5 +3908,63 @@
         </options>
       </control>
     </controls>
-  </controller>
+        <outputs>
+            <output>
+                <group>[Channel4]</group>
+                <key>keylock</key>
+                <status>0x83</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel4]</group>
+                <key>keylock</key>
+                <status>0x93</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>keylock</key>
+                <status>0x82</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel3]</group>
+                <key>keylock</key>
+                <status>0x92</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>keylock</key>
+                <status>0x81</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel2]</group>
+                <key>keylock</key>
+                <status>0x91</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>keylock</key>
+                <status>0x80</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+            <output>
+                <group>[Channel1]</group>
+                <key>keylock</key>
+                <status>0x90</status>
+                <midino>0x0D</midino>
+                <minimum>0.5</minimum>
+            </output>
+        </outputs>
+	</controller>
 </MixxxControllerPreset>
