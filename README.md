@@ -31,7 +31,7 @@ I haven't really use it much yet only while implementing, so may not be great.
 Fx rockers (the Hold, Off, On things) turn on Fx1 and Fx2 chains for the current active deck (left Desk 1 or 3, Right Deck 2 or 4).
 
 6 Fx selectors turn on and off the 6 effects (3 in Fx1 and 3 in Fx2).  Fill these are you wish, I've got them as Bitcrusher (rather then HPF), Autopan (rather than LPF), Flanger, Echo, Reverb, Phaser (the last 4 match the buttons).
-Normal press toggles them on an off so you can have multiple effects active.  Shift press turns off all effects except this one, to allow quick selection of a single effect.
+Shift press toggles them on an off so you can have multiple effects active.  Normal press turns off all effects except this one, to allow quick selection of a single effect.
 
 Dry/Wet knob as before contols both effects banks.
 Beats knob contols the meta knobs for all 6 effects.
