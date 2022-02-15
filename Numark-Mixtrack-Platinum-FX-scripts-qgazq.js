@@ -136,6 +136,14 @@ MixtrackPlatinumFX.init = function(id, debug) {
 MixtrackPlatinumFX.shutdown = function() {
     var shutdownSysex = [0xF0, 0x00, 0x20, 0x7F, 0x02, 0xF7];
     midi.sendSysexMsg(shutdownSysex, shutdownSysex.length);
+	midi.sendShortMsg(0xB0, 0x06, 0);
+	midi.sendShortMsg(0xB0, 0x3F, 0);
+	midi.sendShortMsg(0xB1, 0x06, 0);
+	midi.sendShortMsg(0xB1, 0x3F, 0);
+	midi.sendShortMsg(0xB2, 0x06, 0);
+	midi.sendShortMsg(0xB2, 0x3F, 0);
+	midi.sendShortMsg(0xB3, 0x06, 0);
+	midi.sendShortMsg(0xB3, 0x3F, 0);
 };
 
 MixtrackPlatinumFX.shift = function() {
@@ -209,7 +217,7 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     
     this.effect1 = function(channel, control, value, status, group) {
         if (value == 0x7F) {
-			if (MixtrackPlatinumFX.shifted)
+			if (!MixtrackPlatinumFX.shifted)
 			{
 				MixtrackPlatinumFX.allEffectOff();
 			}
@@ -223,7 +231,7 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     
     this.effect2 = function(channel, control, value, status, group) {
         if (value == 0x7F) {
-			if (MixtrackPlatinumFX.shifted)
+			if (!MixtrackPlatinumFX.shifted)
 			{
 				MixtrackPlatinumFX.allEffectOff();
 			}
@@ -236,7 +244,7 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     
     this.effect3 = function(channel, control, value, status, group) {
         if (value == 0x7F) {
-			if (MixtrackPlatinumFX.shifted)
+			if (!MixtrackPlatinumFX.shifted)
 			{
 				MixtrackPlatinumFX.allEffectOff();
 			}
@@ -564,7 +572,6 @@ MixtrackPlatinumFX.Deck = function(number) {
                     return;
                 }
                 this.currentRangeIdx = (this.currentRangeIdx + 1) % MixtrackPlatinumFX.pitchRanges.length;
-                //engine.setValue(this.group, "rateRange", MixtrackPlatinumFX.pitchRanges[this.currentRangeIdx]);
 				MixtrackPlatinumFX.updateRateRange(channel, this.group, MixtrackPlatinumFX.pitchRanges[this.currentRangeIdx]);
             };
         },
