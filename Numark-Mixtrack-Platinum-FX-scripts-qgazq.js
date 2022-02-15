@@ -74,6 +74,8 @@ MixtrackPlatinumFX.PadModeControls = {
 // state variable, don't touch
 MixtrackPlatinumFX.shifted = false;
 
+MixtrackPlatinumFX.initComplete=false;
+
 MixtrackPlatinumFX.init = function(id, debug) {     
     MixtrackPlatinumFX.id = id;
     MixtrackPlatinumFX.debug = debug;
@@ -136,6 +138,8 @@ MixtrackPlatinumFX.init = function(id, debug) {
     
     // setup elapsed/remaining tracking
     engine.makeConnection("[Controls]", "ShowDurationRemaining", MixtrackPlatinumFX.timeElapsedCallback);
+	MixtrackPlatinumFX.initComplete=true;
+	MixtrackPlatinumFX.updateArrows();
 };
 
 MixtrackPlatinumFX.shutdown = function() {
@@ -1072,6 +1076,8 @@ MixtrackPlatinumFX.sendScreenBpmMidi = function(deck, bpm) {
     var bytePostfix = [0xF7];
     var byteArray = bytePrefix.concat(bpmArray, bytePostfix);
     midi.sendSysexMsg(byteArray, byteArray.length);
+	
+	MixtrackPlatinumFX.updateArrows();
 };
 
 MixtrackPlatinumFX.shiftToggle = function (channel, control, value, status, group) {
@@ -1118,6 +1124,11 @@ MixtrackPlatinumFX.sendScreenRateMidi = function(deck, rate) {
 };
 
 MixtrackPlatinumFX.updateArrows = function() {
+	if (!MixtrackPlatinumFX.initComplete)
+	{
+		return;
+	}
+	
 	var activeA = MixtrackPlatinumFX.deck[0].active ? 0 : 2;
 	var activeB = MixtrackPlatinumFX.deck[1].active ? 1 : 3;
 
@@ -1137,10 +1148,15 @@ MixtrackPlatinumFX.updateArrows = function() {
 		var down=0;
 		var up=0;
 		
-		if (bpmAlt>(bpmMy+0.05))
-			down=1;
-		if (bpmAlt<(bpmMy-0.05))
-			up=1;
+		// only display if both decks have a bpm
+		if (bpmAlt && bpmMy)
+		{
+			// and have a 0.05 bpm tolerance (else they only go off when you use sync)
+			if (bpmAlt>(bpmMy+0.05))
+				down=1;
+			if (bpmAlt<(bpmMy-0.05))
+				up=1;
+		}
 			
 		midi.sendShortMsg(0x80 | i, 0x0A, down); // down arrow off
 		midi.sendShortMsg(0x80 | i, 0x09, up); // up arrow off
@@ -1151,8 +1167,6 @@ MixtrackPlatinumFX.rateCallback = function(rate, group, control)  {
     var channel = script.deckFromGroup(group) - 1;
     var rateEffective = engine.getValue(group, "rateRange") * -rate;
 
-	MixtrackPlatinumFX.updateArrows();
-	
     MixtrackPlatinumFX.sendScreenRateMidi(channel+1, Math.round(rateEffective*10000));
 };
 
