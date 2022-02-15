@@ -4,6 +4,8 @@ var MixtrackPlatinumFX = {};
 MixtrackPlatinumFX.toggleFXControlEnable = true;
 MixtrackPlatinumFX.toggleFXControlSuper = false;
 
+MixtrackPlatinumFX.shifBrowseIsZoom = false;
+
 // pitch ranges
 // add/remove/modify steps to your liking
 // default step must be set in Mixxx settings
@@ -859,23 +861,45 @@ MixtrackPlatinumFX.ModeBeatjump.prototype = Object.create(components.ComponentCo
 
 MixtrackPlatinumFX.Browse = function() {
     this.knob = new components.Encoder({
+		speed: 0,
+		speedTimer: 0,
         shiftControl: true,
         shiftOffset: 0x01,
         input: function(channel, control, value) {
             var direction;
-            if (!MixtrackPlatinumFX.shifted) {
-                direction = (value > 0x40) ? value - 0x80 : value;
-                engine.setParameter("[Library]", "MoveVertical", direction);
-            } else {
-                direction = (value > 0x40) ? "up" : "down";
-                engine.setParameter("[Channel1]", "waveform_zoom_" + direction, 1);
+            if (MixtrackPlatinumFX.shifted && MixtrackPlatinumFX.shifBrowseIsZoom) {
+				direction = (value > 0x40) ? "up" : "down";
+				engine.setParameter("[Channel1]", "waveform_zoom_" + direction, 1);
 
-                // need to zoom both channels if waveform sync is disabled in Mixxx settings.
-                // and when it's enabled then no need to zoom 2nd channel, as it will cause
-                // the zoom to jump 2 levels at once
-                if (!MixtrackPlatinumFX.waveformsSynced) {
-                    engine.setParameter("[Channel2]", "waveform_zoom_" + direction, 1);
-                }
+				// need to zoom both channels if waveform sync is disabled in Mixxx settings.
+				// and when it's enabled then no need to zoom 2nd channel, as it will cause
+				// the zoom to jump 2 levels at once
+				if (!MixtrackPlatinumFX.waveformsSynced) {
+					engine.setParameter("[Channel2]", "waveform_zoom_" + direction, 1);
+				}
+			} else {
+				if (this.speedTimer !== 0) {
+					engine.stopTimer(this.speedTimer);
+					this.speedTimer = 0;
+				}
+				this.speedTimer = engine.beginTimer(100, function() {
+					this.speed=0;
+					this.speedTimer = 0;
+				}, true);
+				this.speed++;
+                direction = (value > 0x40) ? value - 0x80 : value;
+				if (MixtrackPlatinumFX.shifted)
+				{
+					// when shifted go fast (consecutive squared!)
+					direction *= this.speed*this.speed;
+				}
+				else
+				{
+					// normal, up to 3 consecutive do one for fine control, then speed up
+					if (this.speed>3)
+						direction *= Math.min(4,(this.speed-3));
+				}
+                engine.setParameter("[Library]", "MoveVertical", direction);
             }
         }
     });

@@ -23,6 +23,8 @@ Changed the deck switch logic to ignore the "release" since this is triggered bo
 This ment that we thought neither deck was active most of the time.
 Instead when a deck comes active, we assume the "alt" one isn't.
 
+Changed the browse button to have acceleration, and by default shift now increases the acceleration a lot (to match the description in the manual)
+
 #### Effects
 
 I've changed the way these work from all the other implementaions, to how I think I want them.
