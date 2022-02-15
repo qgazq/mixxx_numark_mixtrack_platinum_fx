@@ -25,6 +25,10 @@ Instead when a deck comes active, we assume the "alt" one isn't.
 
 Changed the browse button to have acceleration, and by default shift now increases the acceleration a lot (to match the description in the manual)
 
+Added up down arrows for bpm matching
+
+Made shutdown zero the digits
+
 #### Effects
 
 I've changed the way these work from all the other implementaions, to how I think I want them.

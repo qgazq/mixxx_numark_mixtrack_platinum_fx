@@ -94,6 +94,9 @@ MixtrackPlatinumFX.init = function(id, debug) {
     for (i = 0; i < 4; i++) {
         MixtrackPlatinumFX.deck[i] = new MixtrackPlatinumFX.Deck(i + 1);
         MixtrackPlatinumFX.updateRateRange(i, "[Channel" + (i+1) + "]", MixtrackPlatinumFX.pitchRanges[0]);
+		
+        midi.sendShortMsg(0x80 | i, 0x0A, 0); // down arrow off
+        midi.sendShortMsg(0x80 | i, 0x09, 0); // up arrow off
     }
     for (i = 0; i < 2; i++) {
         MixtrackPlatinumFX.effect[i] = new MixtrackPlatinumFX.EffectUnit((i % 2)+1);
@@ -137,15 +140,26 @@ MixtrackPlatinumFX.init = function(id, debug) {
 
 MixtrackPlatinumFX.shutdown = function() {
     var shutdownSysex = [0xF0, 0x00, 0x20, 0x7F, 0x02, 0xF7];
+	var i;
+	
+	for (i=0;i<4;i++) {
+        // update spinner and position indicator
+        midi.sendShortMsg(0xB0 | i, 0x3F, 0);
+        midi.sendShortMsg(0xB0 | i, 0x06, 0);
+        // keylock indicator
+        midi.sendShortMsg(0x80 | i, 0x0D, 0x00);
+        // turn off bpm arrows
+        midi.sendShortMsg(0x80 | i, 0x0A, 0x00); // down arrow off
+        midi.sendShortMsg(0x80 | i, 0x09, 0x00); // up arrow off
+		
+		MixtrackPlatinumFX.sendScreenRateMidi(i+1,0);
+		midi.sendShortMsg(0x90+i, 0x0e, 0);
+		MixtrackPlatinumFX.sendScreenBpmMidi(i+1,0);
+		MixtrackPlatinumFX.sendScreenTimeMidi(i+1,0);
+		MixtrackPlatinumFX.sendScreenDurationMidi(i+1,0);		
+	}
+	
     midi.sendSysexMsg(shutdownSysex, shutdownSysex.length);
-	midi.sendShortMsg(0xB0, 0x06, 0);
-	midi.sendShortMsg(0xB0, 0x3F, 0);
-	midi.sendShortMsg(0xB1, 0x06, 0);
-	midi.sendShortMsg(0xB1, 0x3F, 0);
-	midi.sendShortMsg(0xB2, 0x06, 0);
-	midi.sendShortMsg(0xB2, 0x3F, 0);
-	midi.sendShortMsg(0xB3, 0x06, 0);
-	midi.sendShortMsg(0xB3, 0x3F, 0);
 };
 
 MixtrackPlatinumFX.shift = function() {
@@ -1086,6 +1100,7 @@ MixtrackPlatinumFX.deckSwitch = function (channel, control, value, status, group
 			midi.sendShortMsg(0xBF, 0x44, 0);
 			midi.sendShortMsg(0xBF, 0x45, 0);
 		}
+		MixtrackPlatinumFX.updateArrows();
 	}
 };
 
@@ -1102,9 +1117,42 @@ MixtrackPlatinumFX.sendScreenRateMidi = function(deck, rate) {
     sendSysex(byteArray);
 };
 
+MixtrackPlatinumFX.updateArrows = function() {
+	var activeA = MixtrackPlatinumFX.deck[0].active ? 0 : 2;
+	var activeB = MixtrackPlatinumFX.deck[1].active ? 1 : 3;
+
+	var bpmA = engine.getValue("[Channel" + (activeA+1) + "]", "bpm");
+	var bpmB = engine.getValue("[Channel" + (activeB+1) + "]", "bpm");
+
+	var i;
+	for (i=0;i<4;i++)
+	{
+		var bpmMy = engine.getValue("[Channel" + (i+1) + "]", "bpm");
+		var bpmAlt = bpmA;
+		if (i==0 || i==2)
+		{
+			bpmAlt = bpmB;
+		}
+		
+		var down=0;
+		var up=0;
+		
+		if (bpmAlt>(bpmMy+0.05))
+			down=1;
+		if (bpmAlt<(bpmMy-0.05))
+			up=1;
+			
+		midi.sendShortMsg(0x80 | i, 0x0A, down); // down arrow off
+		midi.sendShortMsg(0x80 | i, 0x09, up); // up arrow off
+	}
+};
+
 MixtrackPlatinumFX.rateCallback = function(rate, group, control)  {
     var channel = script.deckFromGroup(group) - 1;
     var rateEffective = engine.getValue(group, "rateRange") * -rate;
+
+	MixtrackPlatinumFX.updateArrows();
+	
     MixtrackPlatinumFX.sendScreenRateMidi(channel+1, Math.round(rateEffective*10000));
 };
 
