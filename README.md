@@ -29,6 +29,10 @@ Added up down arrows for bpm matching
 
 Made shutdown zero the digits
 
+Shift PFL(Cue) is slip mode toggle.
+
+Shift load button ejects the deck.  I wanted to make it previous track since we lost it from the bottom row of the performance pads, but mixxx doesn't seem to have a previous track control.
+
 #### Effects
 
 I've changed the way these work from all the other implementaions, to how I think I want them.
@@ -40,5 +44,5 @@ Fx rockers (the Hold, Off, On things) turn on Fx1 and Fx2 chains for the current
 Shift press toggles them on an off so you can have multiple effects active.  Normal press turns off all effects except this one, to allow quick selection of a single effect.
 
 Dry/Wet knob as before contols both effects banks.
-Beats knob contols the meta knobs for all 6 effects.
-Shift beats knob controls parameter 1 for all 6 effects.
+Beats knob controls parameter 1 for all 6 effects (normally time based)
+Shift Beats knob contols the meta knobs for all 6 effects.

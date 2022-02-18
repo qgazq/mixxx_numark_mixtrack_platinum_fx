@@ -279,10 +279,10 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     this.effectParam = new components.Encoder({
         group: "[EffectRack1_EffectUnit" + deckNumber + "_Effect1]",
         shift: function() {
-            this.inKey = "parameter1";
+            this.inKey = "meta";
         },
         unshift: function() {
-            this.inKey = "meta";
+            this.inKey = "parameter1";
         },
         input: function(channel, control, value) {
             this.inSetParameter(this.inGetParameter() + this.inValueScale(value));
@@ -294,10 +294,10 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     this.effectParam2 = new components.Encoder({
         group: "[EffectRack1_EffectUnit" + deckNumber + "_Effect2]",
         shift: function() {
-            this.inKey = "parameter1";
+            this.inKey = "meta";
         },
         unshift: function() {
-            this.inKey = "meta";
+            this.inKey = "parameter1";
         },
         input: function(channel, control, value) {
             this.inSetParameter(this.inGetParameter() + this.inValueScale(value));
@@ -309,10 +309,10 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
     this.effectParam3 = new components.Encoder({
         group: "[EffectRack1_EffectUnit" + deckNumber + "_Effect3]",
         shift: function() {
-            this.inKey = "parameter1";
+            this.inKey = "meta";
         },
         unshift: function() {
-            this.inKey = "meta";
+            this.inKey = "parameter1";
         },
         input: function(channel, control, value) {
             this.inSetParameter(this.inGetParameter() + this.inValueScale(value));
@@ -431,13 +431,31 @@ MixtrackPlatinumFX.Deck = function(number) {
     });
 
     this.pflButton = new components.Button({
+        shift: function() {
+            this.disconnect();
+            this.inKey = "slip_enabled";
+            this.outKey = "slip_enabled";
+            this.connect();
+            this.trigger();
+        },
+        unshift: function() {
+            this.disconnect();
+            this.inKey = "pfl";
+            this.outKey = "pfl";
+            this.connect();
+            this.trigger();
+        },
         type: components.Button.prototype.types.toggle,
         midi: [0x90 + channel, 0x1B],
-        key: "pfl"
     });
 
     this.loadButton = new components.Button({
-        inKey: "LoadSelectedTrack"
+        shift: function() {
+			this.inKey = "eject";
+        },
+        unshift: function() {
+			this.inKey = "LoadSelectedTrack";
+        },
     });
 
     this.volume = new components.Pot({
