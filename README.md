@@ -26,12 +26,32 @@ Instead when a deck comes active, we assume the "alt" one isn't.
 Changed the browse button to have acceleration, and by default shift now increases the acceleration a lot (to match the description in the manual)
 
 Added up down arrows for bpm matching
+Added caching to this so they are only sent to the decks if they have changed (or start up and deck switch)
 
-Made shutdown zero the digits
+Made shutdown zero the digits (and turn process to 0, decks back to 1 and 2, and generally try and make it look tidy)
 
 Shift PFL(Cue) is slip mode toggle.
 
 Shift load button ejects the deck.  I wanted to make it previous track since we lost it from the bottom row of the performance pads, but mixxx doesn't seem to have a previous track control.
+
+Added logic for the tap button, Two modes exist:
+* The default is to use the mixxx common bpm.tapButton which sets the effective bpm to the one tapped using the tempo adjust.  Shift tap resets to 0 tempo change.
+* The alternative changes the actual file bpm.  The problem is the reset doesn't work, the best I can do is change the effective bpm to the original, but then the file is still "broken" next time it is loaded.
+
+For tapping we have to "guess" which deck is intended, so we use some pointers.
+1) we'll only consider loaded decks
+2) except in fallback we'll only consider decks on the "active" layer (unless neither on this layer are loaded)
+3) If one deck has PFL and the other doesn't we use that one (assumption that tapping bpm will be on a non playout deck)
+4) If both have the same PFL state then look if one is playing.  Currently prefers the one that IS playing, could argue this the other way?
+5) If they both match then use the one with the lowest deck number
+To help know which it is using when tapping BOTH up and down arrows on the deck are lit.  As the first tap doesn't make any changes (you can't work out a bpm from one tap) it is safe to tap and hold the button and check which deck the arrows are showing on.
+
+Some tidy up of initialisation:
+* we force the decks back to deck 1 and 2 to match our variables
+* send a keylock update.
+* disable effects on master and headphones
+
+Fixed visual error for shift play, when aligning the beatgrid the button never went off
 
 #### Effects
 

@@ -6,6 +6,9 @@ MixtrackPlatinumFX.toggleFXControlSuper = false;
 
 MixtrackPlatinumFX.shifBrowseIsZoom = false;
 
+// setting this to false sets tap the file bpm, but without a way to reset its dangerous
+MixtrackPlatinumFX.tapChangesTempo = true;
+
 // pitch ranges
 // add/remove/modify steps to your liking
 // default step must be set in Mixxx settings
@@ -76,6 +79,14 @@ MixtrackPlatinumFX.shifted = false;
 
 MixtrackPlatinumFX.initComplete=false;
 
+MixtrackPlatinumFX.bpms = []; 
+MixtrackPlatinumFX.trackBPM = function(value, group, control) {
+	// file_bpm always seems to be 0?
+	// this doesn't work if we have to scan for bpm as it will be zero initially
+	// so we hook into the bpm change as well, and if we have 0 then set it to the first value seen (in bpm output)
+	MixtrackPlatinumFX.bpms[script.deckFromGroup(group) - 1] = engine.getValue(group,"bpm");
+}
+
 MixtrackPlatinumFX.init = function(id, debug) {     
     MixtrackPlatinumFX.id = id;
     MixtrackPlatinumFX.debug = debug;
@@ -94,15 +105,23 @@ MixtrackPlatinumFX.init = function(id, debug) {
     MixtrackPlatinumFX.effect = new components.ComponentContainer();
     var i;
     for (i = 0; i < 4; i++) {
+		var group="[Channel" + (i+1) + "]";
         MixtrackPlatinumFX.deck[i] = new MixtrackPlatinumFX.Deck(i + 1);
-        MixtrackPlatinumFX.updateRateRange(i, "[Channel" + (i+1) + "]", MixtrackPlatinumFX.pitchRanges[0]);
-		
-        midi.sendShortMsg(0x80 | i, 0x0A, 0); // down arrow off
-        midi.sendShortMsg(0x80 | i, 0x09, 0); // up arrow off
+        MixtrackPlatinumFX.updateRateRange(i, group, MixtrackPlatinumFX.pitchRanges[0]);
+		// refresh keylock state (the output mapping in the xml doesn't seem to do it
+        midi.sendShortMsg(0x80 | i, 0x0D, engine.getValue(group,"keylock")?0x7F:0x00);
+        midi.sendShortMsg(0x90 | i, 0x0D, engine.getValue(group,"keylock")?0x7F:0x00);
+		// Hook into this and save the bpm_file when loaded so we can reset it later
+		engine.makeConnection(group, 'track_loaded', MixtrackPlatinumFX.trackBPM ).trigger();
     }
     for (i = 0; i < 2; i++) {
         MixtrackPlatinumFX.effect[i] = new MixtrackPlatinumFX.EffectUnit((i % 2)+1);
 	}
+	// turn effect for master and headphones off to avoid confusion
+	engine.setValue("[EffectRack1_EffectUnit1]", "group_[Headphone]_enable", 0);
+	engine.setValue("[EffectRack1_EffectUnit2]", "group_[Headphone]_enable", 0);
+	engine.setValue("[EffectRack1_EffectUnit1]", "group_[Master]_enable", 0);
+	engine.setValue("[EffectRack1_EffectUnit2]", "group_[Master]_enable", 0);
 
     MixtrackPlatinumFX.browse = new MixtrackPlatinumFX.Browse();
     MixtrackPlatinumFX.gains = new MixtrackPlatinumFX.Gains();
@@ -119,7 +138,7 @@ MixtrackPlatinumFX.init = function(id, debug) {
     engine.makeConnection("[Channel2]", 'rate', MixtrackPlatinumFX.rateCallback).trigger();
     engine.makeConnection("[Channel3]", 'rate', MixtrackPlatinumFX.rateCallback).trigger();
     engine.makeConnection("[Channel4]", 'rate', MixtrackPlatinumFX.rateCallback).trigger();
-
+	
     // trigger is needed to initialize lights to 0x01
     MixtrackPlatinumFX.deck.forEachComponent(function(component) {
         component.trigger();
@@ -136,10 +155,14 @@ MixtrackPlatinumFX.init = function(id, debug) {
     midi.sendShortMsg(0x99, 0x04, MixtrackPlatinumFX.LOW_LIGHT);
     midi.sendShortMsg(0x99, 0x05, MixtrackPlatinumFX.LOW_LIGHT);
     
+	// since we default to active on deck 1 and 2 make sure the controller does too
+	midi.sendShortMsg(0x90, 0x08, 0x7F);
+	midi.sendShortMsg(0x91, 0x08, 0x7F);
+	
     // setup elapsed/remaining tracking
     engine.makeConnection("[Controls]", "ShowDurationRemaining", MixtrackPlatinumFX.timeElapsedCallback);
 	MixtrackPlatinumFX.initComplete=true;
-	MixtrackPlatinumFX.updateArrows();
+	MixtrackPlatinumFX.updateArrows(true);
 };
 
 MixtrackPlatinumFX.shutdown = function() {
@@ -162,6 +185,10 @@ MixtrackPlatinumFX.shutdown = function() {
 		MixtrackPlatinumFX.sendScreenTimeMidi(i+1,0);
 		MixtrackPlatinumFX.sendScreenDurationMidi(i+1,0);		
 	}
+
+	// switch to decks 1 and 2
+	midi.sendShortMsg(0x90, 0x08, 0x7F);
+	midi.sendShortMsg(0x91, 0x08, 0x7F);
 	
     midi.sendSysexMsg(shutdownSysex, shutdownSysex.length);
 };
@@ -325,6 +352,59 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
 
 MixtrackPlatinumFX.EffectUnit.prototype = new components.ComponentContainer();
 
+MixtrackPlatinumFX.activeForTap = function (value) {
+	// fuzzy logic
+	// to tap we probably want a playing deck
+	// and we probably don't want it "live"
+	// we will need it "active"
+	// so best is a playing deck with pfl = 5
+	// next best a stopped deck with pfl = 4
+	// then a playing deck = 3
+	// then a stopped deck without pfl (which by this point is any loaded) = 2
+	// and as a fallback a deck that isn't active
+	// if there are mulitple then the lowest number wins (1,2,3,4)
+	// if no decks with loaded tracks then -1 so caller should check for that
+	var i=0;
+	var winner=-1;
+	var winnerScore=0;
+	for (i=0; i<4 ; i++) {
+		if (engine.getValue("[Channel" + (i+1) + "]","track_loaded")) {
+			if (MixtrackPlatinumFX.deck[i].active) {
+				var localscore=0;
+				if (engine.getValue("[Channel" + (i+1) + "]","pfl")) {
+					if (engine.getValue("[Channel" + (i+1) + "]","play")) {
+						localscore=5;
+					} else {
+						localscore=4;
+					}
+				} else {
+					if (engine.getValue("[Channel" + (i+1) + "]","play")) {
+						localscore=3;
+					} else {
+						localscore=2;
+					}
+				}
+			} else {
+				localscore=1;
+			}
+			if (localscore>winnerScore) {
+				winnerScore=localscore;
+				winner=i;
+			}
+		}
+	}
+	
+	if (winner>=0) {
+		if (value>0) {
+			MixtrackPlatinumFX.updateArrows(false, true, winner);
+		} else {
+			MixtrackPlatinumFX.updateArrows(true);
+		}
+	}
+	
+	return winner;
+};
+
 MixtrackPlatinumFX.Deck = function(number) {
     components.Deck.call(this, number);
 
@@ -345,6 +425,10 @@ MixtrackPlatinumFX.Deck = function(number) {
     this.bpm = new components.Component({
         outKey: "bpm",
         output: function(value, group, control) {
+			if (MixtrackPlatinumFX.bpms[script.deckFromGroup(group) - 1]==0)
+			{
+				MixtrackPlatinumFX.bpms[script.deckFromGroup(group) - 1] = engine.getValue(group,"bpm");
+			}
             MixtrackPlatinumFX.sendScreenBpmMidi(number, Math.round(value * 100));
         },
     });
@@ -405,9 +489,7 @@ MixtrackPlatinumFX.Deck = function(number) {
     });
     
     this.playButton_beatgrid = function(channel, control, value, status, group) {
-        if (value == 0x7F) {
-            engine.setValue(group, "beats_translate_curpos", true);
-        }
+        engine.setValue(group, "beats_translate_curpos", value?1:0);
     };
         
 
@@ -425,10 +507,94 @@ MixtrackPlatinumFX.Deck = function(number) {
         shiftOffset: 0x01
     });
 
-    this.tap = new components.Button({
-        key: "bpm_tap",
-        midi: [0x88, 0x09]
-    });
+	// we get two midi callbacks for tap, but double taps will be confusing so we just ignore the second set
+	if (number==1)
+	{
+		if (MixtrackPlatinumFX.tapChangesTempo)
+		{
+			this.tap = new components.Button({
+				unshift: function() {
+					this.disconnect();
+					this.input = function(channel, control, value, _status, _group) { 
+						var tapch=MixtrackPlatinumFX.activeForTap(value)+1;
+						if (tapch) {
+							if (value>0) {
+								var prelen = bpm.tap.length;
+								bpm.tapButton(tapch);
+								// if the array reset, or changed then the tap was "accepted"
+								if ((bpm.tap.length==0) || (bpm.tap.length!=prelen)) {
+									this.send(this.outValueScale(value));
+								} else {
+									this.send(0);
+								}
+							} else {
+								this.send(this.outValueScale(value));
+							}
+						}
+					};
+				},
+				shift: function() {
+					// reset rate to 0 (i.e. no tempo change)
+					this.disconnect();
+					this.input = function(channel, control, value, _status, _group) {  
+						var tapch=MixtrackPlatinumFX.activeForTap(value)+1;
+						if (value>0 && tapch) {
+							engine.setValue("[Channel" + tapch + "]","rate",0);
+						}
+					};
+				},
+				midi: [0x88, 0x09]
+			});
+			this.tap.output(0);
+		}
+		else
+		{
+			this.tap = new components.Button({
+				shift: function() {
+					this.disconnect();
+					this.input = function(channel, control, value, _status, _group) {
+						var tapch=MixtrackPlatinumFX.activeForTap(value)+1;
+						if (tapch) {
+							// This doesn't work, it doesn't set the bpm, it sets the rate to achive this bpm
+							if (value>0 && MixtrackPlatinumFX.bpms[tapch-1]) {
+								engine.setValue("[Channel" + tapch + "]", "bpm", MixtrackPlatinumFX.bpms[tapch-1]);
+							}
+							this.send(this.outValueScale(value));
+						}
+					};
+				},
+				unshift: function() {
+					/*
+					this.disconnect();
+					this.input = components.Button.prototype.input;
+					this.inKey = "bpm_tap";
+					this.outKey = "bpm_tap";
+					this.connect();
+					this.trigger();
+					*/
+					this.disconnect();
+					this.input = function(channel, control, value, _status, _group) { 
+						var tapch=MixtrackPlatinumFX.activeForTap(value)+1;
+						if (tapch) {
+							engine.setValue("[Channel" + tapch + "]","bpm_tap",value);
+							this.send(this.outValueScale(value));
+						}
+					};
+				},
+				//key: "bpm_tap",
+				midi: [0x88, 0x09]
+			});
+			this.tap.output(0);
+		}
+	}
+	else
+	{
+		// ignore callbacks other than the first
+		this.tap = new components.Button({
+			// null, ignore the second mapping
+			input: function(channel, control, value, _status, _group) { },
+		});
+	}
 
     this.pflButton = new components.Button({
         shift: function() {
@@ -1114,7 +1280,7 @@ MixtrackPlatinumFX.deckSwitch = function (channel, control, value, status, group
 		var deck = channel;
 		MixtrackPlatinumFX.deck[deck].setActive(value == 0x7F); 
 		// turn "off" the other deck
-		// this can't reliably be done with the release and it also trigger for this deck when the button is released
+		// this can't reliably be done with the release as it also trigger for this deck when the button is released
 		var other = 4-deck;
 		if (deck==0 || deck==2)
 			other = 2-deck;
@@ -1124,7 +1290,7 @@ MixtrackPlatinumFX.deckSwitch = function (channel, control, value, status, group
 			midi.sendShortMsg(0xBF, 0x44, 0);
 			midi.sendShortMsg(0xBF, 0x45, 0);
 		}
-		MixtrackPlatinumFX.updateArrows();
+		MixtrackPlatinumFX.updateArrows(true);
 	}
 };
 
@@ -1141,43 +1307,69 @@ MixtrackPlatinumFX.sendScreenRateMidi = function(deck, rate) {
     sendSysex(byteArray);
 };
 
-MixtrackPlatinumFX.updateArrows = function() {
-	if (!MixtrackPlatinumFX.initComplete)
-	{
+// arrow data state (and cache to prevent midi spam)
+MixtrackPlatinumFX.arrowsData = {
+	arrowsUpdateOn	:true,
+	uparrow			:[0,0,0,0],
+	downarrow		:[0,0,0,0],
+};
+
+// force refresh turns arrow behaviour back to normal, and forces a refresh bypressing the cache
+// force show turns both arrows on and suspends normal operation
+MixtrackPlatinumFX.updateArrows = function(forceRefresh, forceShow, deck) {
+	if (!MixtrackPlatinumFX.initComplete) {
 		return;
 	}
 	
-	var activeA = MixtrackPlatinumFX.deck[0].active ? 0 : 2;
-	var activeB = MixtrackPlatinumFX.deck[1].active ? 1 : 3;
-
-	var bpmA = engine.getValue("[Channel" + (activeA+1) + "]", "bpm");
-	var bpmB = engine.getValue("[Channel" + (activeB+1) + "]", "bpm");
-
-	var i;
-	for (i=0;i<4;i++)
-	{
-		var bpmMy = engine.getValue("[Channel" + (i+1) + "]", "bpm");
-		var bpmAlt = bpmA;
-		if (i==0 || i==2)
-		{
-			bpmAlt = bpmB;
+	if (forceShow) {
+		// both arrows on to indicate the deck we are tapping
+		midi.sendShortMsg(0x80 | deck, 0x0A, 1);
+		midi.sendShortMsg(0x80 | deck, 0x09, 1);
+		// and stop other updates changing them
+		MixtrackPlatinumFX.arrowsData.arrowsUpdateOn=false;
+	} else {
+		if (forceRefresh) {
+			MixtrackPlatinumFX.arrowsData.arrowsUpdateOn=true;
 		}
-		
-		var down=0;
-		var up=0;
-		
-		// only display if both decks have a bpm
-		if (bpmAlt && bpmMy)
-		{
-			// and have a 0.05 bpm tolerance (else they only go off when you use sync)
-			if (bpmAlt>(bpmMy+0.05))
-				down=1;
-			if (bpmAlt<(bpmMy-0.05))
-				up=1;
+		if (MixtrackPlatinumFX.arrowsData.arrowsUpdateOn) {
+			var activeA = MixtrackPlatinumFX.deck[0].active ? 0 : 2;
+			var activeB = MixtrackPlatinumFX.deck[1].active ? 1 : 3;
+
+			var bpmA = engine.getValue("[Channel" + (activeA+1) + "]", "bpm");
+			var bpmB = engine.getValue("[Channel" + (activeB+1) + "]", "bpm");
+
+			var i;
+			for (i=0;i<4;i++) {
+				var bpmMy = engine.getValue("[Channel" + (i+1) + "]", "bpm");
+				var bpmAlt = bpmA;
+				if (i==0 || i==2) {
+					bpmAlt = bpmB;
+				}
+				
+				var down=0;
+				var up=0;
+				
+				// only display if both decks have a bpm
+				if (bpmAlt && bpmMy) {
+					// and have a 0.05 bpm tolerance (else they only go off when you use sync)
+					if (bpmAlt>(bpmMy+0.05)) {
+						down=1;
+					}
+					if (bpmAlt<(bpmMy-0.05)) {
+						up=1;
+					}
+				}
+
+				if (forceRefresh || MixtrackPlatinumFX.arrowsData.downarrow[i]!=down) {
+					MixtrackPlatinumFX.arrowsData.downarrow[i]=down;
+					midi.sendShortMsg(0x80 | i, 0x0A, down); // down arrow update
+				}
+				if (forceRefresh || MixtrackPlatinumFX.arrowsData.uparrow[i]!=up) {
+					MixtrackPlatinumFX.arrowsData.uparrow[i]=up;
+					midi.sendShortMsg(0x80 | i, 0x09, up); // up arrow update
+				}
+			}
 		}
-			
-		midi.sendShortMsg(0x80 | i, 0x0A, down); // down arrow off
-		midi.sendShortMsg(0x80 | i, 0x09, up); // up arrow off
 	}
 };
 
