@@ -47,6 +47,13 @@ Added logic for the tap button, Two modes exist:
 * The default is to use the mixxx common bpm.tapButton which sets the effective bpm to the one tapped using the tempo adjust.  Shift tap resets to 0 tempo change.
 * The alternative changes the actual file bpm.  The problem is the reset doesn't work, the best I can do is change the effective bpm to the original, but then the file is still "broken" next time it is loaded.
 
+For the default, the mixxx common function takes taps and averages them.
+If you don't tap for 2 seconds the average resets and you start again.
+To prevent accidental double taps or misses if a tap is 40% shorter or 80% longer it will be ignored.
+I found while testing sometimes if I got the first two taps wrong the rest would be rejected by the filter, but it wasn't obvious this was happening.
+By default the button is dimly lit (liek most others). When you tap the button if it accepts the tap it will go bright, if it rejects it from the filter it will show off.
+If this happens stop tapping wait 2 seconds for the filter to clear and try again.
+
 For tapping we have to "guess" which deck is intended, so we use some pointers.
 1) we'll only consider loaded decks
 2) except in fallback we'll only consider decks on the "active" layer (unless neither on this layer are loaded)
