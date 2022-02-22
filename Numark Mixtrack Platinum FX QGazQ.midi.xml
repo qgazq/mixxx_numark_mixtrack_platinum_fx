@@ -1213,7 +1213,7 @@
       <control>
         <group>[Channel3]</group>
         <key>MixtrackPlatinumFX.deck[2].padSection.modeButtonPress</key>
-        <status>0x85</status>
+        <status>0x86</status>
         <midino>0x0B</midino>
         <options>
           <script-binding />
@@ -1222,7 +1222,7 @@
       <control>
         <group>[Channel4]</group>
         <key>MixtrackPlatinumFX.deck[3].padSection.modeButtonPress</key>
-        <status>0x86</status>
+        <status>0x87</status>
         <midino>0x0B</midino>
         <options>
           <script-binding />

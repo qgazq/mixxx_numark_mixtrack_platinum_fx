@@ -1,5 +1,8 @@
 # mixxx_numark_mixtrack_platinum_fx
 
+Copy a lot of the manual from https://manual.mixxx.org/2.3/en/hardware/controllers/numark_mixtrack_pro_fx.html
+Just updated where we have made changes / additions
+
 ## Changes (from Octopussy gist)
 
 ### xml
@@ -12,6 +15,8 @@ Added effect parameter callback bindings 4 more times so we have 1 per effect (s
 Added Cue button, and Pitch Bend buttons for decks 3 and 4
 
 Added outputs for keylock (copied from Mixtrack Platinum mapping)
+
+Correct shift sample button relase for channels 3 and 4
 
 ### js
 
@@ -41,18 +46,55 @@ Some tidy up of initialisation:
 
 Fixed visual error for shift play, when aligning the beatgrid the button never went off
 
+Changed default high ight to 0x7f (full on, 0x0a would do as well, but 0x09 is one down).  Not much uses this var.
+
+Default to only 4 fader cuts
+
+
+#### Padmodes
+
+The pad mode buttons have 3 different states.
+
+|State|Active|LED|
+|Normal|Single press the button|On|
+|Shifted|Shift press the button|Slow Blink|
+|Alternative|Either, press and hold for 550ms (0.5s), or double press|Fast Blink|
+
+Performance Pads in each mode:
+
+|Mode|Normal|Shifted|Alternative|
+|Cue|Cues 1-8 (1)|Beatjump (2)|Cues 9-16 (1)|
+|Auto Loop|Loops (3)|Roll (4)|TBD (10)|
+|Fader Cuts|Top 4 Faders cut (5), Bottom 4 as labelled (6)|All 8 Fader cut (5)|Top 4 Faders cut (5), Bottom 4 (7)|
+|Sample|Samples 1-8 (8)|Samples 9-16 (8)|Pitch Play (9)|
+
+1) Normal cue behaviour, press triggers or sets if empty.  Shift press clears.
+2) Normal jump by (insert jump table).  Shift press reverse jump.
+3) Normal, Start a loop of lenght (insert table here).  Shift press do a roll loop of the same length.
+4) Same as Loops (3) but shift state inverted (default roll, shift loop).
+5) Auto moves the fade, ref manual.
+6) Stutter does stutter, Prev does jump to start, Rewind scrub back, FF scrub forward.
+7) Stutter does censor (reverse roll), Prev does play reverse (toggle), Rewind does key sync to other deck - shift does key reset, FF does tap tempo as TAP button (but clearly this deck) - shift does tempo reset
+8) Normal sample behaviour, press plays (or loads if empty).  Shift press stops if its playing, if not then ejects.
+9) See https://serato.com/latest/blog/20208/update-196-pitch-play-mappings Only difference is the ranges aren't change by a parameter button they are changed by Shift Sample (which means you can't get directly from Pitch Play to Samples 9-16).
+10) Another bank to be decided
+* Cue loop - Probably not as Mixxx 2.4 will introduce saved loops, which will just go in the normal cues that we have 16 of anyway.  Would generally go on button 1.
+* Slicer - Nice if we can implement (might be too much!), consider stealing from https://manual.mixxx.org/2.4/de/hardware/controllers/pioneer_ddj_sx.html#pioneer-ddj-sx-slicermode (though might need 2.4).  Does match this position.
+
 #### Tapping
 
 Added logic for the tap button, Two modes exist:
 * The default is to use the mixxx common bpm.tapButton which sets the effective bpm to the one tapped using the tempo adjust.  Shift tap resets to 0 tempo change.
 * The alternative changes the actual file bpm.  The problem is the reset doesn't work, the best I can do is change the effective bpm to the original, but then the file is still "broken" next time it is loaded.
+The alternative mode is only accessible by setting a code variable MixtrackPlatinumFX.tapChangesTempo to false, recommended only for advanced users
 
 For the default, the mixxx common function takes taps and averages them.
 If you don't tap for 2 seconds the average resets and you start again.
 To prevent accidental double taps or misses if a tap is 40% shorter or 80% longer it will be ignored.
 I found while testing sometimes if I got the first two taps wrong the rest would be rejected by the filter, but it wasn't obvious this was happening.
-By default the button is dimly lit (liek most others). When you tap the button if it accepts the tap it will go bright, if it rejects it from the filter it will show off.
+By default the button is dimly lit (like most others). When you tap the button if it accepts the tap it will go bright, if it rejects it from the filter it will show off.
 If this happens stop tapping wait 2 seconds for the filter to clear and try again.
+Fixed this kicking in after 8 taps.
 
 For tapping we have to "guess" which deck is intended, so we use some pointers.
 1) we'll only consider loaded decks
