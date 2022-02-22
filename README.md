@@ -55,18 +55,20 @@ Default to only 4 fader cuts
 
 The pad mode buttons have 3 different states.
 
-|State|Active|LED|
-|Normal|Single press the button|On|
-|Shifted|Shift press the button|Slow Blink|
-|Alternative|Either, press and hold for 550ms (0.5s), or double press|Fast Blink|
+| State | Active | LED |
+| --- | --- | --- |
+| Normal | Single press the button | On |
+| Shifted | Shift press the button | Slow Blink |
+| Alternative | Either, press and hold for 550ms (0.5s), or double press | Fast Blink |
 
 Performance Pads in each mode:
 
-|Mode|Normal|Shifted|Alternative|
-|Cue|Cues 1-8 (1)|Beatjump (2)|Cues 9-16 (1)|
-|Auto Loop|Loops (3)|Roll (4)|TBD (10)|
-|Fader Cuts|Top 4 Faders cut (5), Bottom 4 as labelled (6)|All 8 Fader cut (5)|Top 4 Faders cut (5), Bottom 4 (7)|
-|Sample|Samples 1-8 (8)|Samples 9-16 (8)|Pitch Play (9)|
+| Mode | Normal | Shifted | Alternative |
+| --- | --- | --- | --- |
+| Cue | Cues 1-8 (1) | Beatjump (2) | Cues 9-16 (1) |
+| Auto Loop | Loops (3) | Roll (4) | TBD (10) |
+| Fader Cuts | Top 4 Faders cut (5), Bottom 4 as labelled (6) | All 8 Fader cut (5) | Top 4 Faders cut (5), Bottom 4 (7) |
+| Sample | Samples 1-8 (8) | Samples 9-16 (8) | Pitch Play (9) |
 
 1) Normal cue behaviour, press triggers or sets if empty.  Shift press clears.
 2) Normal jump by (insert jump table).  Shift press reverse jump.
