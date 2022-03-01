@@ -29,6 +29,8 @@ This ment that we thought neither deck was active most of the time.
 Instead when a deck comes active, we assume the "alt" one isn't.
 
 Changed the browse button to have acceleration, and by default shift now increases the acceleration a lot (to match the description in the manual)
+Holding left shift while pressing browse does "GoToItem" which opens a folder in the left pannel, and loads the track to an empty deck on the right.
+Holding right shift while pressing loads the track into the preview deck and plays it (or stops it if its already playing)
 
 Added up down arrows for bpm matching
 Added caching to this so they are only sent to the decks if they have changed (or start up and deck switch)
@@ -46,7 +48,7 @@ Some tidy up of initialisation:
 
 Fixed visual error for shift play, when aligning the beatgrid the button never went off
 
-Changed default high ight to 0x7f (full on, 0x0a would do as well, but 0x09 is one down).  Not much uses this var.
+Changed default high light to 0x7f (full on, 0x0a would do as well, but 0x09 is one down).  Not much uses this var.
 
 Default to only 4 fader cuts
 
@@ -65,8 +67,8 @@ Performance Pads in each mode:
 
 | Mode | Normal | Shifted | Alternative |
 | --- | --- | --- | --- |
-| Cue | Cues 1-8 (1) | Beatjump (2) | Cues 9-16 (1) |
-| Auto Loop | Loops (3) | Roll (4) | TBD (10) |
+| Cue | Cues 1-8 (1) | Cues 9-16 (1) | Beatjump (2) |
+| Auto Loop | Loops (3) | Roll (4) | Cue loop (10) |
 | Fader Cuts | Top 4 Faders cut (5), Bottom 4 as labelled (6) | All 8 Fader cut (5) | Top 4 Faders cut (5), Bottom 4 (7) |
 | Sample | Samples 1-8 (8) | Samples 9-16 (8) | Pitch Play (9) |
 
@@ -78,10 +80,10 @@ Performance Pads in each mode:
 6) Stutter does stutter, Prev does jump to start, Rewind scrub back, FF scrub forward.
 7) Stutter does censor (reverse roll), Prev does play reverse (toggle), Rewind does key sync to other deck - shift does key reset, FF does tap tempo as TAP button (but clearly this deck) - shift does tempo reset
 8) Normal sample behaviour, press plays (or loads if empty).  Shift press stops if its playing, if not then ejects.
-9) See https://serato.com/latest/blog/20208/update-196-pitch-play-mappings Only difference is the ranges aren't change by a parameter button they are changed by Shift Sample (which means you can't get directly from Pitch Play to Samples 9-16).
-10) Another bank to be decided
-* Cue loop - Probably not as Mixxx 2.4 will introduce saved loops, which will just go in the normal cues that we have 16 of anyway.  Would generally go on button 1.
-* Slicer - Nice if we can implement (might be too much!), consider stealing from https://manual.mixxx.org/2.4/de/hardware/controllers/pioneer_ddj_sx.html#pioneer-ddj-sx-slicermode (though might need 2.4).  Does match this position.
+9) See https://serato.com/latest/blog/20208/update-196-pitch-play-mappings Only differences are the ranges aren't change by a parameter button they are changed by Shift Sample (which means you can't get directly from Pitch Play to Samples 9-16), and the "root" key is half brightness.  https://serato.com/downloads/files/151805/Numark+MixTrack+Platinum+FX+Serato+DJ+Pro+Quick-Start+Guide.pdf
+10) Currently cue loop, but see below.  Pressing the button jumps to the relative hotcue (1-8) and activates a loop (the same length as if the loop button was pressed).  Shift pressing a button activates slip mode, and does a roll at the cue point, then releasing the button resumes where it would have been, I'm not sure how reliable this is, but it seems neet!
+* Cue loop - Probably not as Mixxx 2.4 will introduce saved loops, which will just go in the normal cues that we have 16 of anyway.
+* Slicer - Nice if we can implement (might be too much!), consider stealing from https://manual.mixxx.org/2.4/de/hardware/controllers/pioneer_ddj_sx.html#pioneer-ddj-sx-slicermode (though might need 2.4).  FUTURE!
 
 #### Tapping
 

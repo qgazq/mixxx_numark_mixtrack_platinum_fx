@@ -70,13 +70,14 @@ MixtrackPlatinumFX.PadModeControls = {
     AUTOLOOP: 0x0D,
     FADERCUTS: 0x07,
     SAMPLE1: 0x0B,
-    BEATJUMP: 0x02,
+    BEATJUMP: 0x01, // DUMMY not used by controller
     SAMPLE2: 0x0F,
     AUTOLOOP2: 0x0E, // DUMMY not used by controller
     KEYPLAY: 0x0C, // DUMMY not used by controller
-    HOTCUE2: 0x01, // DUMMY not used by controller
+    HOTCUE2: 0x02,
     FADERCUTS2: 0x03, // DUMMY not used by controller
     FADERCUTS3: 0x04, // DUMMY not used by controller
+    AUTOLOOP3: 0x05, // DUMMY not used by controller
 };
 
 // enables 4 bottom pads "fader cuts" for 8
@@ -853,11 +854,12 @@ MixtrackPlatinumFX.PadSection = function(deckNumber) {
     this.modes[MixtrackPlatinumFX.PadModeControls.FADERCUTS2] = new MixtrackPlatinumFX.ModeFaderCuts(deckNumber, 1);
     this.modes[MixtrackPlatinumFX.PadModeControls.FADERCUTS3] = new MixtrackPlatinumFX.ModeFaderCuts(deckNumber, 2);
     this.modes[MixtrackPlatinumFX.PadModeControls.SAMPLE1] = new MixtrackPlatinumFX.ModeSample(deckNumber, false);
-    this.modes[MixtrackPlatinumFX.PadModeControls.BEATJUMP] = new MixtrackPlatinumFX.ModeBeatjump(deckNumber, 1);
+    this.modes[MixtrackPlatinumFX.PadModeControls.BEATJUMP] = new MixtrackPlatinumFX.ModeBeatjump(deckNumber, 2);
     this.modes[MixtrackPlatinumFX.PadModeControls.SAMPLE2] = new MixtrackPlatinumFX.ModeSample(deckNumber, 1);
     this.modes[MixtrackPlatinumFX.PadModeControls.AUTOLOOP2] = new MixtrackPlatinumFX.ModeAutoLoop(deckNumber, 1);
     this.modes[MixtrackPlatinumFX.PadModeControls.KEYPLAY] = new MixtrackPlatinumFX.ModeKeyPlay(deckNumber, 2);
-    this.modes[MixtrackPlatinumFX.PadModeControls.HOTCUE2] = new MixtrackPlatinumFX.ModeHotcue(deckNumber, 2);
+    this.modes[MixtrackPlatinumFX.PadModeControls.HOTCUE2] = new MixtrackPlatinumFX.ModeHotcue(deckNumber, 1);
+    this.modes[MixtrackPlatinumFX.PadModeControls.AUTOLOOP3] = new MixtrackPlatinumFX.ModeCueLoop(deckNumber, 2);
 
     this.modeButtonPress = function(channel, control, value) {
 		// always stop the time, its either the off, which should stop it
@@ -874,12 +876,17 @@ MixtrackPlatinumFX.PadSection = function(deckNumber) {
 					this.longPressTimer = 0;
 					return;
 				}
-				if (control==MixtrackPlatinumFX.PadModeControls.HOTCUE && this.longPressMode==MixtrackPlatinumFX.PadModeControls.HOTCUE2) {
+				if (control==MixtrackPlatinumFX.PadModeControls.HOTCUE && this.longPressMode==MixtrackPlatinumFX.PadModeControls.BEATJUMP) {
 					this.setMode(channel,this.longPressMode);
 					this.longPressTimer = 0;
 					return;
 				}
 				if (control==MixtrackPlatinumFX.PadModeControls.FADERCUTS && this.longPressMode==MixtrackPlatinumFX.PadModeControls.FADERCUTS3) {
+					this.setMode(channel,this.longPressMode);
+					this.longPressTimer = 0;
+					return;
+				}
+				if (control==MixtrackPlatinumFX.PadModeControls.AUTOLOOP && this.longPressMode==MixtrackPlatinumFX.PadModeControls.AUTOLOOP3) {
 					this.setMode(channel,this.longPressMode);
 					this.longPressTimer = 0;
 					return;
@@ -916,12 +923,15 @@ MixtrackPlatinumFX.PadSection = function(deckNumber) {
 
 		// this stops the timeout from setting another timer!
 		if (this.longPressTimer===0) {
-			if (ctrl2==MixtrackPlatinumFX.PadModeControls.SAMPLE1 || ctrl2==MixtrackPlatinumFX.PadModeControls.HOTCUE || ctrl2==MixtrackPlatinumFX.PadModeControls.FADERCUTS) {
+			if (ctrl2==MixtrackPlatinumFX.PadModeControls.SAMPLE1 || ctrl2==MixtrackPlatinumFX.PadModeControls.HOTCUE || ctrl2==MixtrackPlatinumFX.PadModeControls.FADERCUTS || ctrl2==MixtrackPlatinumFX.PadModeControls.AUTOLOOP) {
+				if (ctrl2==MixtrackPlatinumFX.PadModeControls.AUTOLOOP) {
+					this.longPressMode=MixtrackPlatinumFX.PadModeControls.AUTOLOOP3;
+				}
 				if (ctrl2==MixtrackPlatinumFX.PadModeControls.SAMPLE1) {
 					this.longPressMode=MixtrackPlatinumFX.PadModeControls.KEYPLAY;
 				}
 				if (ctrl2==MixtrackPlatinumFX.PadModeControls.HOTCUE) {
-					this.longPressMode=MixtrackPlatinumFX.PadModeControls.HOTCUE2;
+					this.longPressMode=MixtrackPlatinumFX.PadModeControls.BEATJUMP;
 				}
 				if (ctrl2==MixtrackPlatinumFX.PadModeControls.FADERCUTS) {
 					this.longPressMode=MixtrackPlatinumFX.PadModeControls.FADERCUTS3;
@@ -1029,8 +1039,9 @@ MixtrackPlatinumFX.ModeHotcue = function(deckNumber, secondaryMode) {
 
     this.name = MixtrackPlatinumFX.PadModeControls.HOTCUE;
 	var offset=0;
-	if (secondaryMode==2) {
+	if (secondaryMode==1) {
 		this.name = MixtrackPlatinumFX.PadModeControls.HOTCUE2;
+		this.control = MixtrackPlatinumFX.PadModeControls.HOTCUE2;
 		offset=8;
 	}
     this.pads = new components.ComponentContainer();
@@ -1092,6 +1103,55 @@ MixtrackPlatinumFX.ModeAutoLoop = function(deckNumber, secondaryMode) {
     }
 };
 MixtrackPlatinumFX.ModeAutoLoop.prototype = Object.create(components.ComponentContainer.prototype);
+
+MixtrackPlatinumFX.ModeCueLoop = function(deckNumber, secondaryMode) {
+    components.ComponentContainer.call(this);
+
+    this.name = MixtrackPlatinumFX.PadModeControls.AUTOLOOP;
+	if (secondaryMode) {
+		this.name = MixtrackPlatinumFX.PadModeControls.AUTOLOOP3;
+	}
+    this.control = MixtrackPlatinumFX.PadModeControls.AUTOLOOP;
+    this.unshiftedControl = MixtrackPlatinumFX.PadModeControls.AUTOLOOP;
+    this.secondaryMode = secondaryMode;
+    this.lightOnValue = 0x7F;
+
+    this.pads = new components.ComponentContainer();
+    for (var i = 0; i < 8; i++) {
+        this.pads[i] = new components.Button({
+            group: "[Channel" + deckNumber + "]",
+            midi: [0x93 + deckNumber, 0x14 + i],
+            size: MixtrackPlatinumFX.autoLoopSizes[i],
+            shiftControl: true,
+            sendShifted: true,
+            shiftOffset: 0x08,
+			keynum: i,
+            shift: function() {
+				this.input=function(channel, control, value, status, _group) {
+					engine.setValue(this.group, "slip_enabled", value);
+					engine.setValue(this.group, "hotcue_" + (this.keynum+1) + "_activate", value);
+					engine.setValue(this.group, "beatlooproll_activate", value);
+					midi.sendShortMsg(this.midi[0], this.midi[1] + this.shiftOffset, this.outValueScale(engine.getValue(this.group, "hotcue_" + (this.keynum+1) + "_enabled")));
+				};
+				midi.sendShortMsg(this.midi[0], this.midi[1] + this.shiftOffset, this.outValueScale(engine.getValue(this.group, "hotcue_" + (this.keynum+1) + "_enabled")));
+            },
+            unshift: function() {
+				this.input=function(channel, control, value, status, _group) {
+					if (value > 0) {
+						engine.setValue(this.group, "hotcue_" + (this.keynum+1) + "_activate", value);
+						script.triggerControl(this.group, "beatloop_activate");
+					} else {
+						engine.setValue(this.group, "hotcue_" + (this.keynum+1) + "_activate", value);
+					}
+					midi.sendShortMsg(this.midi[0], this.midi[1], this.outValueScale(engine.getValue(this.group, "hotcue_" + (this.keynum+1) + "_enabled")));
+				};
+				midi.sendShortMsg(this.midi[0], this.midi[1], this.outValueScale(engine.getValue(this.group, "hotcue_" + (this.keynum+1) + "_enabled")));
+            },
+            outConnect: false
+        });
+    }
+};
+MixtrackPlatinumFX.ModeCueLoop.prototype = Object.create(components.ComponentContainer.prototype);
 
 MixtrackPlatinumFX.mykey=0;
 MixtrackPlatinumFX.ModeKeyPlay = function(deckNumber, secondaryMode) {
@@ -1358,7 +1418,7 @@ MixtrackPlatinumFX.ModeBeatjump = function(deckNumber, secondaryMode) {
     components.ComponentContainer.call(this);
 
 	this.name = MixtrackPlatinumFX.PadModeControls.BEATJUMP;
-    this.control = MixtrackPlatinumFX.PadModeControls.BEATJUMP;
+    this.control = MixtrackPlatinumFX.PadModeControls.HOTCUE;
     this.secondaryMode = secondaryMode;
     this.unshiftedControl = MixtrackPlatinumFX.PadModeControls.HOTCUE;
     this.lightOnValue = 0x7F;
@@ -1441,10 +1501,27 @@ MixtrackPlatinumFX.Browse = function() {
         group: "[Library]",
         shiftControl: true,
         shiftOffset: 0x01,
+		previewing: false,
         shift: function() {
             this.inKey = "GoToItem";
+			this.input = function(channel, control, value, _status, _group) {
+				if (value>0) {
+					if (MixtrackPlatinumFX.rightShift) {
+						if (this.previewing) {
+							script.triggerControl('[PreviewDeck1]', 'stop');
+							this.previewing = false;
+						} else {
+							script.triggerControl('[PreviewDeck1]', 'LoadSelectedTrackAndPlay');
+							this.previewing = true;
+						}
+					} else {
+						script.triggerControl('[Library]', 'GoToItem');
+					}
+				}
+			};
         },
         unshift: function() {
+			this.input = components.Button.prototype.input;
             this.inKey = "MoveFocusForward";
         }
     });
@@ -1595,10 +1672,15 @@ MixtrackPlatinumFX.sendScreenBpmMidi = function(deck, bpm) {
 	MixtrackPlatinumFX.updateArrows();
 };
 
+MixtrackPlatinumFX.rightShift=false;
 MixtrackPlatinumFX.shiftToggle = function (channel, control, value, status, group) {
     if (value == 0x7F) {
+		if (status==0x91 || status==0x93) {
+			MixtrackPlatinumFX.rightShift=true;
+		}
         MixtrackPlatinumFX.shift();
     } else {
+		MixtrackPlatinumFX.rightShift=false;
         MixtrackPlatinumFX.unshift();
     }
 };
