@@ -83,7 +83,7 @@ Performance Pads in each mode:
 9) See https://serato.com/latest/blog/20208/update-196-pitch-play-mappings Only differences are the ranges aren't change by a parameter button they are changed by Shift Sample (which means you can't get directly from Pitch Play to Samples 9-16), and the "root" key is half brightness.  https://serato.com/downloads/files/151805/Numark+MixTrack+Platinum+FX+Serato+DJ+Pro+Quick-Start+Guide.pdf
 10) Currently cue loop, but see below.  Pressing the button jumps to the relative hotcue (1-8) and activates a loop (the same length as if the loop button was pressed).  Shift pressing a button activates slip mode, and does a roll at the cue point, then releasing the button resumes where it would have been, I'm not sure how reliable this is, but it seems neet!
 * Cue loop - Probably not as Mixxx 2.4 will introduce saved loops, which will just go in the normal cues that we have 16 of anyway.
-* Slicer - Nice if we can implement (might be too much!), consider stealing from https://manual.mixxx.org/2.4/de/hardware/controllers/pioneer_ddj_sx.html#pioneer-ddj-sx-slicermode (though might need 2.4).  FUTURE!
+* Slicer - Nice if we can implement (might be too much!), consider stealing from https://manual.mixxx.org/2.4/de/hardware/controllers/pioneer_ddj_sx.html#pioneer-ddj-sx-slicermode (though might need 2.4) also https://mixxx.discourse.group/t/hercules-djcontrol-inpulse-500/19739/51  FUTURE!
 
 #### Tapping
 
@@ -122,3 +122,5 @@ Shift press toggles them on an off so you can have multiple effects active.  Nor
 Dry/Wet knob as before contols both effects banks.
 Beats knob controls parameter 1 for all 6 effects (normally time based)
 Shift Beats knob contols the meta knobs for all 6 effects.
+
+Made the 6 FX selectors blink when either of the FX paddles in engaged (either hold or on).

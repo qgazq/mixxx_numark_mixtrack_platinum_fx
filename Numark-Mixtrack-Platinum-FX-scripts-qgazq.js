@@ -233,16 +233,51 @@ MixtrackPlatinumFX.unshift = function() {
 };
 
 MixtrackPlatinumFX.allEffectOff = function() {
-    midi.sendShortMsg(0x98, 0x00, MixtrackPlatinumFX.LOW_LIGHT);
-    midi.sendShortMsg(0x98, 0x01, MixtrackPlatinumFX.LOW_LIGHT);
-    midi.sendShortMsg(0x98, 0x02, MixtrackPlatinumFX.LOW_LIGHT);
-    midi.sendShortMsg(0x99, 0x03, MixtrackPlatinumFX.LOW_LIGHT);
-    midi.sendShortMsg(0x99, 0x04, MixtrackPlatinumFX.LOW_LIGHT);
-    midi.sendShortMsg(0x99, 0x05, MixtrackPlatinumFX.LOW_LIGHT);
 	MixtrackPlatinumFX.effect[0].effects=[false, false, false];
 	MixtrackPlatinumFX.effect[1].effects=[false, false, false];
+	MixtrackPlatinumFX.FxBlinkUpdateLEDs();
 	MixtrackPlatinumFX.effect[0].updateEffects();
 	MixtrackPlatinumFX.effect[1].updateEffects();
+};
+
+MixtrackPlatinumFX.FxBlinkUpdateLEDs = function() {
+	var newStates1=[false, false, false];
+	var newStates2=[false, false, false];
+	if (MixtrackPlatinumFX.FxBlinkState) {
+		newStates1=MixtrackPlatinumFX.effect[0].effects;
+		newStates2=MixtrackPlatinumFX.effect[1].effects;
+	}
+    midi.sendShortMsg(0x98, 0x00, newStates1[0] ? MixtrackPlatinumFX.HIGH_LIGHT:MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x98, 0x01, newStates1[1] ? MixtrackPlatinumFX.HIGH_LIGHT:MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x98, 0x02, newStates1[2] ? MixtrackPlatinumFX.HIGH_LIGHT:MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x99, 0x03, newStates2[0] ? MixtrackPlatinumFX.HIGH_LIGHT:MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x99, 0x04, newStates2[1] ? MixtrackPlatinumFX.HIGH_LIGHT:MixtrackPlatinumFX.LOW_LIGHT);
+    midi.sendShortMsg(0x99, 0x05, newStates2[2] ? MixtrackPlatinumFX.HIGH_LIGHT:MixtrackPlatinumFX.LOW_LIGHT);
+}
+
+MixtrackPlatinumFX.FxBlinkTimer=0;
+MixtrackPlatinumFX.FxBlinkState=true;
+MixtrackPlatinumFX.FxBlink = function() {
+	var start = MixtrackPlatinumFX.effect[0].isSwitchHolded || MixtrackPlatinumFX.effect[1].isSwitchHolded;
+	
+	if (start) {
+		if (MixtrackPlatinumFX.FxBlinkTimer==0) {
+			MixtrackPlatinumFX.FxBlinkState = false;
+			MixtrackPlatinumFX.FxBlinkUpdateLEDs();
+			MixtrackPlatinumFX.FxBlinkTimer = engine.beginTimer(MixtrackPlatinumFX.blinkDelay/2, function() {
+				MixtrackPlatinumFX.FxBlinkState = !MixtrackPlatinumFX.FxBlinkState;
+				MixtrackPlatinumFX.FxBlinkUpdateLEDs();
+			});
+		}
+	} else {
+		// stop
+		if (MixtrackPlatinumFX.FxBlinkTimer!=0) {
+			engine.stopTimer(MixtrackPlatinumFX.FxBlinkTimer);
+			MixtrackPlatinumFX.FxBlinkTimer=0;
+		}
+        MixtrackPlatinumFX.FxBlinkState = true;
+		MixtrackPlatinumFX.FxBlinkUpdateLEDs();
+	}
 };
 
 // TODO in 2.3 it is not possible to "properly" map the FX selection buttons.
@@ -280,6 +315,8 @@ MixtrackPlatinumFX.EffectUnit = function(deckNumber) {
 		engine.setValue("[EffectRack1_EffectUnit2]", "group_[Channel" + fxDeck + "]_enable", (value != 0));
         
         this.updateEffects();
+		
+		MixtrackPlatinumFX.FxBlink();
     }
 
     this.dryWetKnob = new components.Pot({
