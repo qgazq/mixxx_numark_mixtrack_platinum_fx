@@ -52,6 +52,7 @@ Changed default high light to 0x7f (full on, 0x0a would do as well, but 0x09 is 
 
 Default to only 4 fader cuts
 
+Make Samples light half brightness when loaded and full brightness while playing
 
 #### Padmodes
 
@@ -123,4 +124,4 @@ Dry/Wet knob as before contols both effects banks.
 Beats knob controls parameter 1 for all 6 effects (normally time based)
 Shift Beats knob contols the meta knobs for all 6 effects.
 
-Made the 6 FX selectors blink when either of the FX paddles in engaged (either hold or on).
+Made the 6 FX selectors blink when either of the FX paddles in engaged (either hold or on), and synced with pad mode blinking

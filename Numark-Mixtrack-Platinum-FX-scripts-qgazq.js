@@ -98,6 +98,52 @@ MixtrackPlatinumFX.trackBPM = function(value, group, control) {
 	MixtrackPlatinumFX.bpms[script.deckFromGroup(group) - 1] = engine.getValue(group,"bpm");
 }
 
+MixtrackPlatinumFX.BlinkTimer=0;
+MixtrackPlatinumFX.BlinkState=true;
+MixtrackPlatinumFX.BlinkStateSlow=true;
+MixtrackPlatinumFX.CallBacks=[];
+MixtrackPlatinumFX.CallSpeed=[];
+MixtrackPlatinumFX.BlinkStart = function(callback, slow) {
+	for (var i in MixtrackPlatinumFX.CallBacks) {
+		if (!MixtrackPlatinumFX.CallBacks[i]) {
+			// empty slot
+			MixtrackPlatinumFX.CallBacks[i]=callback;
+			MixtrackPlatinumFX.CallSpeed[i]=slow;
+			return i+1;
+		}
+	}
+	var idx = MixtrackPlatinumFX.CallBacks.push(callback);
+	MixtrackPlatinumFX.CallSpeed[idx-1]=slow;
+	return idx;
+};
+MixtrackPlatinumFX.BlinkStop = function(index) {
+	MixtrackPlatinumFX.CallBacks[index-1]=null;
+};
+MixtrackPlatinumFX.BlinkFunc = function() {
+	// toggle the global blink variables
+	MixtrackPlatinumFX.BlinkState = !MixtrackPlatinumFX.BlinkState;
+	if (MixtrackPlatinumFX.BlinkState) {
+		MixtrackPlatinumFX.BlinkStateSlow = !MixtrackPlatinumFX.BlinkStateSlow;
+	}
+	
+	// if we should be blinking the fx, then call its function
+	if (MixtrackPlatinumFX.FxBlinkState) {
+		MixtrackPlatinumFX.FxBlinkUpdateLEDs();
+	}
+	// fire any callbacks
+	for (var i in MixtrackPlatinumFX.CallBacks) {
+		if (MixtrackPlatinumFX.CallBacks[i]) {
+			if (MixtrackPlatinumFX.CallSpeed[i]) {
+				if (MixtrackPlatinumFX.BlinkState) {
+					MixtrackPlatinumFX.CallBacks[i](MixtrackPlatinumFX.BlinkStateSlow);
+				}
+			} else {
+				MixtrackPlatinumFX.CallBacks[i](MixtrackPlatinumFX.BlinkState);
+			}
+		}
+	}
+};
+
 MixtrackPlatinumFX.init = function(id, debug) {     
     MixtrackPlatinumFX.id = id;
     MixtrackPlatinumFX.debug = debug;
@@ -188,11 +234,18 @@ MixtrackPlatinumFX.init = function(id, debug) {
     engine.makeConnection("[Controls]", "ShowDurationRemaining", MixtrackPlatinumFX.timeElapsedCallback);
 	MixtrackPlatinumFX.initComplete=true;
 	MixtrackPlatinumFX.updateArrows(true);
+	
+	MixtrackPlatinumFX.BlinkTimer = engine.beginTimer(MixtrackPlatinumFX.blinkDelay/2, MixtrackPlatinumFX.BlinkFunc);
 };
 
 MixtrackPlatinumFX.shutdown = function() {
     var shutdownSysex = [0xF0, 0x00, 0x20, 0x7F, 0x02, 0xF7];
 	var i;
+	
+	if (MixtrackPlatinumFX.BlinkTimer!=0) {
+		engine.stopTimer(MixtrackPlatinumFX.BlinkTimer);
+		MixtrackPlatinumFX.BlinkTimer=0;
+	}
 	
 	for (i=0;i<4;i++) {
         // update spinner and position indicator
@@ -243,7 +296,7 @@ MixtrackPlatinumFX.allEffectOff = function() {
 MixtrackPlatinumFX.FxBlinkUpdateLEDs = function() {
 	var newStates1=[false, false, false];
 	var newStates2=[false, false, false];
-	if (MixtrackPlatinumFX.FxBlinkState) {
+	if (!MixtrackPlatinumFX.FxBlinkState || MixtrackPlatinumFX.BlinkState) {
 		newStates1=MixtrackPlatinumFX.effect[0].effects;
 		newStates2=MixtrackPlatinumFX.effect[1].effects;
 	}
@@ -261,21 +314,11 @@ MixtrackPlatinumFX.FxBlink = function() {
 	var start = MixtrackPlatinumFX.effect[0].isSwitchHolded || MixtrackPlatinumFX.effect[1].isSwitchHolded;
 	
 	if (start) {
-		if (MixtrackPlatinumFX.FxBlinkTimer==0) {
-			MixtrackPlatinumFX.FxBlinkState = false;
-			MixtrackPlatinumFX.FxBlinkUpdateLEDs();
-			MixtrackPlatinumFX.FxBlinkTimer = engine.beginTimer(MixtrackPlatinumFX.blinkDelay/2, function() {
-				MixtrackPlatinumFX.FxBlinkState = !MixtrackPlatinumFX.FxBlinkState;
-				MixtrackPlatinumFX.FxBlinkUpdateLEDs();
-			});
-		}
+		MixtrackPlatinumFX.FxBlinkState = true;
+		MixtrackPlatinumFX.FxBlinkUpdateLEDs();
 	} else {
 		// stop
-		if (MixtrackPlatinumFX.FxBlinkTimer!=0) {
-			engine.stopTimer(MixtrackPlatinumFX.FxBlinkTimer);
-			MixtrackPlatinumFX.FxBlinkTimer=0;
-		}
-        MixtrackPlatinumFX.FxBlinkState = true;
+        MixtrackPlatinumFX.FxBlinkState = false;
 		MixtrackPlatinumFX.FxBlinkUpdateLEDs();
 	}
 };
@@ -866,7 +909,6 @@ MixtrackPlatinumFX.PadSection = function(deckNumber) {
     components.ComponentContainer.call(this);
 
     this.blinkTimer = 0;
-    this.blinkLedState = true;
 	
 	this.longPressTimer = 0;
 	this.longPressMode = 0;
@@ -1035,15 +1077,9 @@ MixtrackPlatinumFX.PadSection = function(deckNumber) {
     // start an infinite timer that toggles led state
     this.blinkLedOn = function(midi1, midi2, onVal, secondMode) {
         this.blinkLedOff();
-		var delay=MixtrackPlatinumFX.blinkDelay;
-		if (secondMode===2) {
-			delay/=2;
-		}
-        this.blinkLedState = true;
-        this.blinkTimer = engine.beginTimer(delay, function() {
-            midi.sendShortMsg(midi1, midi2, this.blinkLedState ? onVal : 0x01);
-            this.blinkLedState = !this.blinkLedState;
-        });
+        this.blinkTimer = MixtrackPlatinumFX.BlinkStart(function(isOn) {
+            midi.sendShortMsg(midi1, midi2, isOn ? onVal : 0x01);
+        },(secondMode!==2));
     };
 
     // stop the blink timer
@@ -1052,7 +1088,7 @@ MixtrackPlatinumFX.PadSection = function(deckNumber) {
             return;
         }
 
-        engine.stopTimer(this.blinkTimer);
+        MixtrackPlatinumFX.BlinkStop(this.blinkTimer);
         this.blinkTimer = 0;
     };
 
@@ -1445,7 +1481,10 @@ MixtrackPlatinumFX.ModeSample = function(deckNumber, secondaryMode) {
             shiftControl: true,
             sendShifted: true,
             shiftOffset: 0x08,
-            outConnect: false
+            outConnect: false,
+			loaded: 0x05,
+			looping: 0x0F,
+			playing: 0x0F,
         });
     }
 };
