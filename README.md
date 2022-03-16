@@ -54,6 +54,8 @@ Default to only 4 fader cuts
 
 Make Samples light half brightness when loaded and full brightness while playing
 
+Make shift and gue gain change all 16 samplers pregain
+
 #### Padmodes
 
 The pad mode buttons have 3 different states.

@@ -276,6 +276,7 @@ MixtrackPlatinumFX.shift = function() {
     MixtrackPlatinumFX.deck.shift();
     MixtrackPlatinumFX.browse.shift();
     MixtrackPlatinumFX.effect.shift();
+	MixtrackPlatinumFX.gains.cueGain.shift();
 };
 
 MixtrackPlatinumFX.unshift = function() {
@@ -283,6 +284,7 @@ MixtrackPlatinumFX.unshift = function() {
     MixtrackPlatinumFX.deck.unshift();
     MixtrackPlatinumFX.browse.unshift();
     MixtrackPlatinumFX.effect.unshift();
+	MixtrackPlatinumFX.gains.cueGain.unshift();
 };
 
 MixtrackPlatinumFX.allEffectOff = function() {
@@ -1612,7 +1614,25 @@ MixtrackPlatinumFX.Gains = function() {
 
     this.cueGain = new components.Pot({
         group: "[Master]",
-        inKey: "headGain"
+        inKey: "headGain",
+		shift: function() {
+			this.disconnect();
+			this.group = "[Sampler1]";
+			this.inKey = "pregain";
+			this.input = function(channel, control, value, _status, _group) {
+						var newValue = this.inValueScale(value);
+						for (var i=1 ; i<=16 ; i++) {
+							engine.setParameter("[Sampler" + i + "]", "pregain", newValue);
+						}
+					};
+		},
+		unshift: function() {
+			this.disconnect();
+			this.firstValueReceived=false;
+			this.group = "[Master]";
+			this.inKey = "headGain";
+			this.input = components.Pot.prototype.input;
+		},
     });
 
     this.cueMix = new components.Pot({
